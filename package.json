@@ -1,0 +1,39 @@
+{
+  "name": "barcode-generator",
+  "version": "1.0.0",
+  "description": "在线条形码生成工具（Web-based Barcode Generator）",
+  "main": "server.js",
+  "keywords": [
+    "barcode",
+    "generator",
+    "web",
+    "tool",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "node build.js",
+    "prod": "cross-env NODE_ENV=production PORT=3000 node server.js",
+    "check:port": "node -e \"const net = require('net'); const port = process.env.PORT || 3000; const server = net.createServer(); server.once('error', (err) => { console.log(err.code === 'EADDRINUSE' ? `❌ Port ${port} is occupied! Kill the process first.` : err.message); process.exit(err.code === 'EADDRINUSE' ? 1 : 0); }).once('listening', () => { server.close(); console.log(`✅ Port ${port} is available`); process.exit(0); }).listen(port);\"",
+    "kill:port": "node -e \"const net = require('net'); const port = process.env.PORT || 3000; net.connect({port}, () => { console.log(`Killing process on port ${port}...`); require('child_process').exec(`lsof -t -i:${port} | xargs kill -9`, (err) => { err ? console.log('Process not found') : console.log(`✅ Port ${port} released`); }); }).on('error', () => { console.log(`Port ${port} is not occupied`); });\""
+  },
+  "dependencies": {
+    "bwip-js": "^4.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.0.1"
+  }
+}
