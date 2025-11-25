@@ -407,3 +407,220 @@ button:disabled::before {
         font-size: 15px;
     }
 }
+
+/* 设置按钮样式 */
+.settings-button-container {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.btn-settings {
+    background-color: #9b59b6;
+    color: white;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-settings:hover:not(:disabled) {
+    background-color: #8e44ad;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(155, 89, 182, 0.4);
+}
+
+.btn-settings::before {
+    content: '⚙️';
+    font-size: 1.1rem;
+}
+
+/* 模态框样式 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: white;
+    margin: auto;
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideInUp 0.3s ease;
+    position: relative;
+}
+
+.modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #7f8c8d;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background-color: #f1f1f1;
+    color: #2c3e50;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background-color: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+}
+
+/* 模态框表单样式 */
+.settings-form .form-item {
+    margin-bottom: 1.2rem;
+}
+
+.settings-form label {
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 6px;
+}
+
+.settings-form input[type="text"],
+.settings-form input[type="number"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.settings-form input[type="text"]:focus,
+.settings-form input[type="number"]:focus {
+    border-color: #9b59b6;
+    box-shadow: 0 0 0 4px rgba(155, 89, 182, 0.1);
+    outline: none;
+}
+
+/* 设置相关消息样式 */
+.settings-message {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    display: none;
+    animation: slideIn 0.3s ease;
+}
+
+.settings-error {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border-left: 4px solid #dc2626;
+}
+
+.settings-error::before {
+    content: '❌ ';
+}
+
+.settings-success {
+    background-color: #f0fdf4;
+    color: #166534;
+    border-left: 4px solid #16a34a;
+}
+
+.settings-success::before {
+    content: '✅ ';
+}
+
+/* 模态框动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 模态框响应式设计 */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 15px 20px;
+    }
+    
+    .modal-title {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-footer {
+        flex-direction: column;
+    }
+    
+    .modal-footer button {
+        width: 100%;
+    }
+}

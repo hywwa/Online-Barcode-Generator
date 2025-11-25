@@ -1,25 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 配置API基础URL - 自适应不同环境
-    const getApiBaseUrl = () => {
-        const hostname = window.location.hostname;
-        const port = window.location.port;
-        
-        // 生产环境直接使用相对路径
-        if (hostname === '106.53.219.143') {
-            return '/'; // 通过Nginx反向代理
-        }
-        
-        // 本地开发环境 - 使用80端口访问时通过代理，否则直接指向3001
-        if (port === '80' || port === '') {
-            return '/';
-        }
-        
-        // 其他情况使用相对路径
-        return '/';
-    };
-    
-    const apiBaseUrl = getApiBaseUrl();
-    console.log(`API基础URL: ${apiBaseUrl}`);
+    // 使用相对路径作为API基础URL
+    const apiBaseUrl = '/';
     const barcodeForm = document.getElementById('barcodeForm');
     const errorContainer = document.getElementById('errorContainer');
     const errorText = document.getElementById('errorText');
@@ -110,22 +91,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 调用API生成条码
             const apiUrl = `${apiBaseUrl}generate-barcode`;
-            console.log(`调用API: ${apiUrl}`);
             const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                text: barcodeText,
-                width: barcodeWidth,
-                height: barcodeHeight,
-                type: 'code128', // 可以扩展为用户可选择的类型
-                // 根据总宽度和每个条形码宽度50mm自动计算重复数量
-                totalWidth: barcodeWidth,
-                singleBarcodeWidth: 50 // 每个条形码的固定宽度(mm)
-            })
-            });
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        text: barcodeText,
+        width: barcodeWidth,    // 用户输入的宽度(mm)
+        height: barcodeHeight,  // 用户输入的高度(mm)
+        type: 'code128'
+    })
+});
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
@@ -135,12 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // 将响应转换为Blob
             const blob = await response.blob();
             
-            // 直接处理新的条码下载，不需要清理旧的URL对象
-            
             // 直接下载条码图片
             const sanitizedText = barcodeText.replace(/[^a-z0-9]/gi, '_').substring(0, 20); // 清理文件名
-            // 计算条码数量（根据总宽度和单个条码宽度）
-            const count = Math.max(1, Math.floor(barcodeWidth / 50)); // 假设每个条码50mm宽
             const filename = `${sanitizedText}(${barcodeWidth}x${barcodeHeight}).png`;
             
             // 创建下载链接并触发下载
@@ -160,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 100);
             
         } catch (error) {
-            console.error('生成条码时出错:', error);
             showError(error.message || '生成条码时发生错误，请稍后重试');
         } finally {
             // 恢复按钮状态
@@ -198,4 +170,125 @@ document.addEventListener('DOMContentLoaded', () => {
             input.parentElement.style.boxShadow = 'none';
         });
     });
+    
+    // 设置功能相关代码
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeBtn = document.querySelector('.close-btn');
+    const closeSettingsBtn = document.querySelector('.close-settings');
+    const settingsForm = document.getElementById('settingsForm');
+    const settingsError = document.getElementById('settingsError');
+    const settingsSuccess = document.getElementById('settingsSuccess');
+    const singleBarcodeWidthMmInput = document.getElementById('singleBarcodeWidthMm');
+    const spacingMmInput = document.getElementById('spacingMm');
+    
+    // 显示设置模态框
+    settingsBtn.addEventListener('click', async () => {
+        try {
+            // 获取当前配置
+            const response = await fetch(`${apiBaseUrl}get-barcode-config`);
+            if (response.ok) {
+                const config = await response.json();
+                // 填充表单
+                singleBarcodeWidthMmInput.value = config.singleBarcodeWidthMm || 50;
+                spacingMmInput.value = config.spacingMm || 7.5;
+            }
+        } catch (error) {
+            // 静默失败，使用默认值
+        }
+        
+        // 重置消息
+        settingsError.style.display = 'none';
+        settingsSuccess.style.display = 'none';
+        
+        // 显示模态框
+        settingsModal.style.display = 'flex';
+    });
+    
+    // 关闭模态框函数
+    const closeModal = () => {
+        settingsModal.style.display = 'none';
+        // 重置表单字段（手动重置，避免重置已删除的password字段）
+        singleBarcodeWidthMmInput.value = 50;
+        spacingMmInput.value = 7.5;
+        settingsError.style.display = 'none';
+        settingsSuccess.style.display = 'none';
+    };
+    
+    // 关闭模态框事件
+    closeBtn.addEventListener('click', closeModal);
+    closeSettingsBtn.addEventListener('click', closeModal);
+    
+    // 点击模态框外部关闭
+    window.addEventListener('click', (event) => {
+        if (event.target === settingsModal) {
+            closeModal();
+        }
+    });
+    
+    // 阻止模态框内点击事件冒泡
+    settingsModal.querySelector('.modal-content').addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+    
+    // 表单提交处理
+    settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const singleBarcodeWidthMm = parseFloat(singleBarcodeWidthMmInput.value);
+        const spacingMm = parseFloat(spacingMmInput.value);
+        
+        // 客户端验证
+        
+        if (isNaN(singleBarcodeWidthMm) || singleBarcodeWidthMm <= 0) {
+            showSettingsError('单个条码宽度必须是大于0的有效数字');
+            return;
+        }
+        
+        if (isNaN(spacingMm) || spacingMm < 0) {
+            showSettingsError('条码间隙必须是大于等于0的有效数字');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${apiBaseUrl}set-barcode-config`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    singleBarcodeWidthMm,
+                    spacingMm
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showSettingsSuccess('设置已成功保存');
+                // 3秒后关闭模态框
+                setTimeout(() => {
+                    closeModal();
+                }, 3000);
+            } else {
+                showSettingsError(data.error || '保存设置失败');
+            }
+        } catch (error) {
+            showSettingsError('保存设置时发生错误，请稍后重试');
+        }
+    });
+    
+    // 显示设置错误消息
+    function showSettingsError(message) {
+        settingsError.querySelector('p').textContent = message;
+        settingsError.style.display = 'block';
+        settingsSuccess.style.display = 'none';
+    }
+    
+    // 显示设置成功消息
+    function showSettingsSuccess(message) {
+        settingsSuccess.querySelector('p').textContent = message;
+        settingsSuccess.style.display = 'block';
+        settingsError.style.display = 'none';
+    }
 });

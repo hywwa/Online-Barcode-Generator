@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>条码生成器 - 管理员界面</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/BarcodeLogo.ico" type="image/x-icon">
+    <style>
+        .admin-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .admin-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .login-form,
+        .code-generator {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .btn {
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .message {
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .message.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .code-display {
+            text-align: center;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .generated-code {
+            font-size: 48px;
+            font-weight: bold;
+            letter-spacing: 10px;
+            color: #007bff;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        .code-expiry {
+            font-size: 14px;
+            color: #666;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .action-buttons .btn {
+            flex: 1;
+        }
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #666;
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 14px;
+        }
+        .logout-btn:hover {
+            color: #0056b3;
+        }
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h2>条码生成器 - 管理员界面</h2>
+        
+        <div id="status-bar" class="status-bar" style="display: none;">
+            <span id="admin-status">已登录</span>
+            <button id="logout-btn" class="logout-btn">退出登录</button>
+        </div>
+        
+        <!-- 登录表单 -->
+        <div id="login-form" class="login-form">
+            <div class="form-group">
+                <label for="admin-password">管理员密码</label>
+                <input 
+                    type="password" 
+                    id="admin-password" 
+                    placeholder="请输入管理员密码"
+                    required
+                >
+            </div>
+            <button type="button" id="login-btn" class="btn">登录</button>
+        </div>
+        
+        <!-- 验证码生成器（初始隐藏） -->
+        <div id="code-generator" class="code-generator" style="display: none;">
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="active-users">0</div>
+                    <div class="stat-label">活跃用户</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="active-codes">0</div>
+                    <div class="stat-label">有效验证码</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="expiry-time">验证码有效期</label>
+                <select id="expiry-time" class="form-control">
+                    <option value="0.0833">5分钟</option>
+                    <option value="0.1667">10分钟</option>
+                    <option value="0.5" selected>30分钟</option>
+                    <option value="1">1小时</option>
+                    <option value="2">2小时</option>
+                    <option value="4">4小时</option>
+                    <option value="12">12小时</option>
+                    <option value="24">24小时</option>
+                </select>
+            </div>
+            
+            <button type="button" id="generate-btn" class="btn">生成新验证码</button>
+            
+            <div id="code-display" class="code-display" style="display: none;">
+                <div class="generated-code" id="verification-code"></div>
+                <div class="code-expiry" id="code-expiry-info"></div>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="button" id="generate-another-btn" class="btn btn-secondary">生成另一个</button>
+            </div>
+        </div>
+        
+        <div id="message-container" class="message" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 元素引用
+            const loginForm = document.getElementById('login-form');
+            const codeGenerator = document.getElementById('code-generator');
+            const statusBar = document.getElementById('status-bar');
+            const adminPassword = document.getElementById('admin-password');
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const generateBtn = document.getElementById('generate-btn');
+            const expiryTime = document.getElementById('expiry-time');
+            const codeDisplay = document.getElementById('code-display');
+            const verificationCode = document.getElementById('verification-code');
+            const codeExpiryInfo = document.getElementById('code-expiry-info');
+            const printCodeBtn = document.getElementById('print-code-btn');
+            const generateAnotherBtn = document.getElementById('generate-another-btn');
+            const messageContainer = document.getElementById('message-container');
+            const activeUsersElement = document.getElementById('active-users');
+            const activeCodesElement = document.getElementById('active-codes');
+            
+            // 显示消息
+            function showMessage(text, type = 'info') {
+                messageContainer.textContent = text;
+                messageContainer.className = `message ${type}`;
+                messageContainer.style.display = 'block';
+                
+                // 3秒后自动隐藏非错误消息
+                if (type !== 'error') {
+                    setTimeout(() => {
+                        messageContainer.style.display = 'none';
+                    }, 3000);
+                }
+            }
+            
+            // 更新统计信息
+            function updateStats() {
+                fetch('/admin-status', {
+                    method: 'GET',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.isAdmin && data.stats) {
+                        activeUsersElement.textContent = data.stats.activeUsers || 0;
+                        activeCodesElement.textContent = data.stats.activeCodes || 0;
+                    }
+                })
+                .catch(error => {
+                    console.error('更新统计信息错误:', error);
+                });
+            }
+            
+            // 检查是否已登录
+            function checkLoginStatus() {
+                // 检查是否有session cookie
+                const hasSession = document.cookie.includes('sessionId');
+                if (hasSession) {
+                    // 尝试获取管理员状态
+                    fetch('/admin-status', {
+                        method: 'GET',
+                        credentials: 'include'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.isAdmin) {
+                            showAdminPanel();
+                        } else {
+                            showLoginPanel();
+                        }
+                    })
+                    .catch(() => {
+                        showLoginPanel();
+                    });
+                } else {
+                    showLoginPanel();
+                }
+            }
+            
+            // 显示登录面板
+            function showLoginPanel() {
+                loginForm.style.display = 'flex';
+                codeGenerator.style.display = 'none';
+                statusBar.style.display = 'none';
+                codeDisplay.style.display = 'none';
+                adminPassword.focus();
+            }
+            
+            // 显示管理员面板
+            function showAdminPanel() {
+                loginForm.style.display = 'none';
+                codeGenerator.style.display = 'flex';
+                statusBar.style.display = 'flex';
+                updateStats();
+                // 每30秒更新一次统计信息
+                setInterval(updateStats, 30000);
+            }
+            
+            // 登录处理
+            loginBtn.addEventListener('click', function() {
+                const password = adminPassword.value;
+                
+                if (!password) {
+                    showMessage('请输入密码', 'error');
+                    return;
+                }
+                
+                loginBtn.disabled = true;
+                loginBtn.textContent = '登录中...';
+                
+                fetch('/admin-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password: password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('登录成功', 'success');
+                        showAdminPanel();
+                        adminPassword.value = '';
+                    } else {
+                        showMessage(data.error || '登录失败，请检查密码', 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage('登录错误，请稍后重试', 'error');
+                    console.error('登录错误:', error);
+                })
+                .finally(() => {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = '登录';
+                });
+            });
+            
+            // 登出处理
+            logoutBtn.addEventListener('click', function() {
+                fetch('/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(() => {
+                    showLoginPanel();
+                    showMessage('已退出登录', 'info');
+                })
+                .catch(error => {
+                    console.error('登出错误:', error);
+                });
+            });
+            
+            // 生成验证码
+            generateBtn.addEventListener('click', function() {
+                const hours = expiryTime.value;
+                
+                generateBtn.disabled = true;
+                generateBtn.textContent = '生成中...';
+                
+                fetch('/generate-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ hours: parseFloat(hours) })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.code) {
+                        // 显示生成的验证码
+                        verificationCode.textContent = data.code;
+                        // 创建Date对象并显示过期时间
+                        const expiryDate = new Date(data.expiryTime);
+                        
+                        // 显示过期时间
+                        codeExpiryInfo.textContent = `有效期至: ${expiryDate.toLocaleString('zh-CN')}`;
+                        codeDisplay.style.display = 'block';
+                        
+                        showMessage('验证码生成成功', 'success');
+                        updateStats();
+                    } else {
+                        showMessage(data.error || '生成验证码失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    showMessage('生成验证码错误，请稍后重试', 'error');
+                    console.error('生成验证码错误:', error);
+                })
+                .finally(() => {
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = '生成新验证码';
+                });
+            });
+            
+            
+            // 生成另一个验证码
+            generateAnotherBtn.addEventListener('click', function() {
+                codeDisplay.style.display = 'none';
+                generateBtn.click();
+            });
+            
+            // 按Enter键登录
+            adminPassword.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loginBtn.click();
+                }
+            });
+            
+            // 初始化检查登录状态
+            checkLoginStatus();
+        });
+    </script>
+</body>
+</html>

@@ -24,7 +24,10 @@ const filesToCopy = [
     { from: 'package-lock.json', to: 'package-lock.json' },
     { from: 'ecosystem.config.js', to: 'ecosystem.config.js' },
     { from: 'public/index.html', to: 'public/index.html' },
+    { from: 'public/admin.html', to: 'public/admin.html' },
+    { from: 'public/verify.html', to: 'public/verify.html' },
     { from: 'public/script.js', to: 'public/script.js' },
+    { from: 'public/verify.js', to: 'public/verify.js' },
     { from: 'public/styles.css', to: 'public/styles.css' }
 ];
 
@@ -66,12 +69,14 @@ filesToCopy.forEach(({ from, to }) => {
     }
 });
 
-// 复制assets目录中的图片文件
+// 复制assets目录中的所有资源文件
 try {
     const assetsDir = path.join(__dirname, 'public', 'assets');
     if (fs.existsSync(assetsDir)) {
         fs.readdirSync(assetsDir).forEach(file => {
-            if (file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.gif')) {
+            // 复制所有图片文件和ico图标文件
+            if (file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg') || 
+                file.endsWith('.gif') || file.endsWith('.ico')) {
                 const source = path.join(assetsDir, file);
                 const target = path.join(distDir, 'public', 'assets', file);
                 if (fs.existsSync(source)) {
