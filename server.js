@@ -18,8 +18,8 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // 使用标准的JSON请求体解析中间件
 app.use(express.json());
 
-// 全局配置 - 存储条码参数设置
-const barcodeConfig = {
+// 默认条码配置 - 用于初始化每个用户的配置
+const DEFAULT_BARCODE_CONFIG = {
     singleBarcodeWidthMm: 50, // 单个条码宽度(mm)
     spacingMm: 7.5,           // 条码之间的间隙(mm)
     sideMarginMm: 8           // 图片两边间距(mm)
@@ -119,7 +119,47 @@ function logAdminLogin(success, message, ip) {
 // 验证码存储结构
 class VerificationCodeStore {
     constructor() {
-        this._storage = {};
+        this._storagePath = path.join(__dirname, 'data', 'verification_codes.json');
+        this._storage = this._loadFromFile();
+    }
+    
+    // 从文件加载数据
+    _loadFromFile() {
+        try {
+            // 确保数据目录存在
+            if (!fs.existsSync(path.dirname(this._storagePath))) {
+                fs.mkdirSync(path.dirname(this._storagePath), { recursive: true });
+            }
+            
+            // 如果文件不存在，返回空对象
+            if (!fs.existsSync(this._storagePath)) {
+                return {};
+            }
+            
+            // 读取并解析文件
+            const data = fs.readFileSync(this._storagePath, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            console.error('Failed to load verification codes from file:', error);
+            return {};
+        }
+    }
+    
+    // 保存数据到文件
+    _saveToFile() {
+        try {
+            // 确保数据目录存在
+            if (!fs.existsSync(path.dirname(this._storagePath))) {
+                fs.mkdirSync(path.dirname(this._storagePath), { recursive: true });
+            }
+            
+            // 写入文件
+            fs.writeFileSync(this._storagePath, JSON.stringify(this._storage, null, 2), 'utf8');
+            return true;
+        } catch (error) {
+            console.error('Failed to save verification codes to file:', error);
+            return false;
+        }
     }
     
     // 添加验证码
@@ -132,6 +172,7 @@ class VerificationCodeStore {
                 accessCount: 0
             }
         };
+        this._saveToFile();
         return true;
     }
     
@@ -142,6 +183,7 @@ class VerificationCodeStore {
             // 更新访问信息
             info.metadata.lastAccessed = Date.now();
             info.metadata.accessCount++;
+            this._saveToFile();
         }
         return info;
     }
@@ -157,6 +199,7 @@ class VerificationCodeStore {
                     lastAccessed: Date.now()
                 }
             };
+            this._saveToFile();
             return true;
         }
         return false;
@@ -166,6 +209,7 @@ class VerificationCodeStore {
     delete(code) {
         if (this._storage[code]) {
             delete this._storage[code];
+            this._saveToFile();
             return true;
         }
         return false;
@@ -181,6 +225,10 @@ class VerificationCodeStore {
                 delete this._storage[code];
                 deletedCount++;
             }
+        }
+        
+        if (deletedCount > 0) {
+            this._saveToFile();
         }
         
         return deletedCount;
@@ -216,7 +264,47 @@ const verificationCodes = new VerificationCodeStore();
 // 会话存储结构
 class SessionStore {
     constructor() {
-        this._storage = {};
+        this._storagePath = path.join(__dirname, 'data', 'sessions.json');
+        this._storage = this._loadFromFile();
+    }
+    
+    // 从文件加载数据
+    _loadFromFile() {
+        try {
+            // 确保数据目录存在
+            if (!fs.existsSync(path.dirname(this._storagePath))) {
+                fs.mkdirSync(path.dirname(this._storagePath), { recursive: true });
+            }
+            
+            // 如果文件不存在，返回空对象
+            if (!fs.existsSync(this._storagePath)) {
+                return {};
+            }
+            
+            // 读取并解析文件
+            const data = fs.readFileSync(this._storagePath, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            console.error('Failed to load sessions from file:', error);
+            return {};
+        }
+    }
+    
+    // 保存数据到文件
+    _saveToFile() {
+        try {
+            // 确保数据目录存在
+            if (!fs.existsSync(path.dirname(this._storagePath))) {
+                fs.mkdirSync(path.dirname(this._storagePath), { recursive: true });
+            }
+            
+            // 写入文件
+            fs.writeFileSync(this._storagePath, JSON.stringify(this._storage, null, 2), 'utf8');
+            return true;
+        } catch (error) {
+            console.error('Failed to save sessions to file:', error);
+            return false;
+        }
     }
     
     // 添加会话
@@ -229,6 +317,10 @@ class SessionStore {
                 accessCount: 1
             }
         };
+        // 只有非管理员会话才写入文件
+        if (!info.isAdmin) {
+            this._saveToFile();
+        }
         return true;
     }
     
@@ -239,6 +331,7 @@ class SessionStore {
             // 更新访问信息
             info.metadata.lastAccessed = Date.now();
             info.metadata.accessCount++;
+            this._saveToFile();
         }
         return info;
     }
@@ -254,6 +347,10 @@ class SessionStore {
                     lastAccessed: Date.now()
                 }
             };
+            // 只有非管理员会话才写入文件
+            if (!this._storage[sessionId].isAdmin) {
+                this._saveToFile();
+            }
             return true;
         }
         return false;
@@ -262,7 +359,12 @@ class SessionStore {
     // 删除会话
     delete(sessionId) {
         if (this._storage[sessionId]) {
+            const isAdminSession = this._storage[sessionId].isAdmin;
             delete this._storage[sessionId];
+            // 只有非管理员会话才写入文件
+            if (!isAdminSession) {
+                this._saveToFile();
+            }
             return true;
         }
         return false;
@@ -272,12 +374,33 @@ class SessionStore {
     cleanupExpired(maxAgeMs) {
         const now = Date.now();
         let deletedCount = 0;
+        let hasNonAdminSessionDeleted = false;
         
         for (const [sessionId, info] of Object.entries(this._storage)) {
-            if (now - info.metadata.createdTimestamp > maxAgeMs) {
+            let isExpired = false;
+            
+            if (info.isAdmin) {
+                // 管理员会话：使用固定的maxAgeMs（7天），但基于最后活动时间
+                isExpired = now - info.metadata.lastAccessed > maxAgeMs;
+            } else {
+                // 用户会话：使用会话自己的expiryTime
+                isExpired = now > info.expiryTime;
+            }
+            
+            if (isExpired) {
+                const isAdminSession = info.isAdmin;
                 delete this._storage[sessionId];
                 deletedCount++;
+                
+                // 只有非管理员会话才需要写入文件
+                if (!isAdminSession) {
+                    hasNonAdminSessionDeleted = true;
+                }
             }
+        }
+        
+        if (hasNonAdminSessionDeleted) {
+            this._saveToFile();
         }
         
         return deletedCount;
@@ -300,6 +423,18 @@ class SessionStore {
         }
         
         return { total, activeUsers, adminSessions };
+    }
+    
+    // 获取所有会话（仅管理员使用）
+    getAll() {
+        // 不返回管理员会话
+        const nonAdminSessions = {};
+        for (const [sessionId, session] of Object.entries(this._storage)) {
+            if (!session.isAdmin) {
+                nonAdminSessions[sessionId] = session;
+            }
+        }
+        return nonAdminSessions;
     }
 }
 
@@ -521,8 +656,7 @@ app.get('/', (req, res) => {
         }
         
         return res.sendFile(verifyPath);
-    }
-});
+    }});
 
 // 添加专门的index.html路由
 app.get('/index.html', (req, res) => {
@@ -534,8 +668,7 @@ app.get('/index.html', (req, res) => {
         return res.sendFile(indexPath);
     } else {
         return res.redirect('/verify.html');
-    }
-});
+    }});
 
 // 添加verify.html路由
 app.get('/verify.html', (req, res) => {
@@ -624,13 +757,13 @@ app.post('/set-barcode-config', sessionAuthMiddleware, async (req, res) => {
     try {
         const { singleBarcodeWidthMm, spacingMm } = req.body;
         
-        // 验证并更新参数
+        // 验证并更新用户会话中的条码配置参数
         if (singleBarcodeWidthMm !== undefined) {
             const width = parseFloat(singleBarcodeWidthMm);
             if (isNaN(width) || width <= 0) {
                 return res.status(400).json({ error: '单个条码宽度必须是大于0的有效数字' });
             }
-            barcodeConfig.singleBarcodeWidthMm = width;
+            req.session.barcodeConfig.singleBarcodeWidthMm = width;
         }
         
         if (spacingMm !== undefined) {
@@ -638,30 +771,54 @@ app.post('/set-barcode-config', sessionAuthMiddleware, async (req, res) => {
             if (isNaN(spacing) || spacing < 0) {
                 return res.status(400).json({ error: '条码间隙必须是大于等于0的有效数字' });
             }
-            barcodeConfig.spacingMm = spacing;
+            req.session.barcodeConfig.spacingMm = spacing;
         }
         
+        // 更新会话存储
+        const sessionId = req.cookies.sessionId;
+        sessions.update(sessionId, { barcodeConfig: req.session.barcodeConfig });
+        
         // 记录配置更新
-        log(LOG_LEVELS.INFO, '条码配置已更新', { config: barcodeConfig, updatedBy: req.ip });
+        log(LOG_LEVELS.INFO, '用户条码配置已更新', { 
+            config: req.session.barcodeConfig, 
+            sessionId: sessionId.substring(0, 8), 
+            updatedBy: req.ip 
+        });
         
         res.status(200).json({ 
             success: true, 
             message: '条码参数设置成功', 
-            config: barcodeConfig 
+            config: req.session.barcodeConfig 
         });
         
     } catch (error) {
         log(LOG_LEVELS.ERROR, '设置条码参数时出错', { error: error.message, stack: error.stack });
         res.status(500).json({ error: '设置参数时发生错误' });
-    }
-});
+    }});
 
-// 获取当前条码配置的API端点
+// 获取当前条码配置的API端点 - 支持返回用户会话配置或默认配置
 app.get('/get-barcode-config', async (req, res) => {
     try {
-        res.status(200).json(barcodeConfig);
+        // 尝试从会话中获取用户特定的配置
+        const sessionId = req.cookies?.sessionId;
+        let configToReturn = DEFAULT_BARCODE_CONFIG;
+        
+        // 如果有会话ID，尝试获取用户会话配置
+        if (sessionId) {
+            const sessionData = sessions.get(sessionId);
+            if (sessionData && sessionData.barcodeConfig) {
+                configToReturn = sessionData.barcodeConfig;
+                log(LOG_LEVELS.DEBUG, '返回用户会话中的条码配置', { 
+                    sessionId: sessionId.substring(0, 8),
+                    ip: req.ip 
+                });
+            }
+        }
+        
+        // 否则返回默认配置
+        res.status(200).json(configToReturn);
     } catch (error) {
-        console.error('获取条码配置时出错:', error);
+        log(LOG_LEVELS.ERROR, '获取条码配置时出错', { error: error.message, stack: error.stack });
         res.status(500).json({ error: '获取配置时发生错误' });
     }
 });
@@ -699,12 +856,28 @@ app.post('/generate-barcode', async (req, res) => {
         const DPI = 600; // 高质量DPI设置
         const mmToPx = (mm) => Math.round(mm * DPI / 25.4);
         
-        // 从全局配置获取参数
-        const sideMarginMm = barcodeConfig.sideMarginMm;
+        // 获取用户的条码配置（优先从会话中获取，否则使用默认配置）
+        const sessionId = req.cookies?.sessionId;
+        let userBarcodeConfig = DEFAULT_BARCODE_CONFIG;
+        
+        if (sessionId) {
+            const sessionData = sessions.get(sessionId);
+            if (sessionData && sessionData.barcodeConfig) {
+                userBarcodeConfig = sessionData.barcodeConfig;
+                log(LOG_LEVELS.DEBUG, '使用用户会话中的条码配置', { 
+                    sessionId: sessionId.substring(0, 8),
+                    config: userBarcodeConfig,
+                    ip: req.ip 
+                });
+            }
+        }
+        
+        // 从用户配置获取参数
+        const sideMarginMm = userBarcodeConfig.sideMarginMm;
         const sideMarginPx = mmToPx(sideMarginMm);
         
         // 条码间隙参数
-        const spacingMm = barcodeConfig.spacingMm;
+        const spacingMm = userBarcodeConfig.spacingMm;
         const spacingPx = mmToPx(spacingMm);
         
         // 转换用户输入的毫米尺寸为像素
@@ -728,9 +901,9 @@ app.post('/generate-barcode', async (req, res) => {
         let count, singleBarcodeWidthPx, actualContentWidth, resultPng;
         
         // 根据用户输入的宽度选择生成模式
-        if (userWidth > barcodeConfig.singleBarcodeWidthMm) {
+        if (userWidth > userBarcodeConfig.singleBarcodeWidthMm) {
             // 多条码模式：用户输入宽度大于配置的单个条码宽度
-            const singleBarcodeWidthMm = barcodeConfig.singleBarcodeWidthMm;
+            const singleBarcodeWidthMm = userBarcodeConfig.singleBarcodeWidthMm;
             singleBarcodeWidthPx = mmToPx(singleBarcodeWidthMm);
             
             // 计算条码数量（考虑间距）
@@ -991,15 +1164,32 @@ function sessionAuthMiddleware(req, res, next) {
         
         // 会话ID不存在的处理
         if (!sessionId) {
-            log(LOG_LEVELS.WARNING, '会话验证失败 - 未提供会话ID', { ip: clientIp, url: req.url });
-            
-            if (req.accepts('html')) {
-                return res.redirect('/verify.html');
+            // 尝试从请求头中获取会话ID
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                sessionId = authHeader.substring(7);
             }
-            return res.status(401).json({ 
-                error: '未授权访问，请先验证验证码',
-                requiresVerification: true 
-            });
+            
+            // 如果仍然没有会话ID，返回错误
+            if (!sessionId) {
+                log(LOG_LEVELS.WARNING, '会话验证失败 - 未提供会话ID', { ip: clientIp, url: req.url });
+                
+                // 对于API请求，返回JSON错误，不重定向
+                if (req.path.startsWith('/admin/') || req.path.startsWith('/api/')) {
+                    return res.status(401).json({ 
+                        error: '未授权访问，请先登录',
+                        requiresVerification: true 
+                    });
+                }
+                
+                if (req.accepts('html')) {
+                    return res.redirect('/verify.html');
+                }
+                return res.status(401).json({ 
+                    error: '未授权访问，请先验证验证码',
+                    requiresVerification: true 
+                });
+            }
         }
         
         // 验证会话是否存在
@@ -1009,6 +1199,14 @@ function sessionAuthMiddleware(req, res, next) {
             
             // 清除无效Cookie
             res.clearCookie('sessionId');
+            
+            // 对于API请求，返回JSON错误，不重定向
+            if (req.path.startsWith('/admin/') || req.path.startsWith('/api/')) {
+                return res.status(401).json({ 
+                    error: '会话不存在，请重新登录',
+                    requiresVerification: true 
+                });
+            }
             
             if (req.accepts('html')) {
                 return res.redirect('/verify.html');
@@ -1027,6 +1225,14 @@ function sessionAuthMiddleware(req, res, next) {
             sessions.delete(sessionId);
             res.clearCookie('sessionId');
             
+            // 对于API请求，返回JSON错误，不重定向
+            if (req.path.startsWith('/admin/') || req.path.startsWith('/api/')) {
+                return res.status(401).json({ 
+                    error: '会话已过期，请重新登录',
+                    requiresVerification: true 
+                });
+            }
+            
             if (req.accepts('html')) {
                 return res.redirect('/verify.html');
             }
@@ -1036,9 +1242,31 @@ function sessionAuthMiddleware(req, res, next) {
             });
         }
         
-        // 验证通过，更新会话活动时间
+        // 验证通过，更新会话活动时间并延长会话过期时间
+        const sessionExpiryDays = sessionData.sessionExpiryDays;
+        let newExpiryTime;
+        
+        if (sessionExpiryDays === null || sessionExpiryDays === undefined) {
+            // 永久有效会话，保持不变
+            newExpiryTime = sessionData.expiryTime;
+        } else {
+            // 延长会话过期时间
+            newExpiryTime = Date.now() + sessionExpiryDays * 24 * 60 * 60 * 1000;
+        }
+        
         sessions.update(sessionId, {
-            lastActivity: Date.now()
+            lastActivity: Date.now(),
+            expiryTime: newExpiryTime
+        });
+        
+        // 同时更新cookie的过期时间
+        res.cookie('sessionId', sessionId, {
+            maxAge: newExpiryTime - Date.now(),
+            httpOnly: true,
+            secure: NODE_ENV === 'production',
+            sameSite: NODE_ENV === 'production' ? 'strict' : 'lax',
+            path: '/',
+            domain: undefined
         });
         
         log(LOG_LEVELS.DEBUG, '会话验证成功', { sessionId: sessionId.substring(0, 8), ip: clientIp });
@@ -1068,11 +1296,13 @@ function sessionAuthMiddleware(req, res, next) {
 app.post('/generate-code', sessionAuthMiddleware, async (req, res) => {
     try {
         const clientIp = req.ip || req.connection.remoteAddress;
-        const { hours = VERIFICATION_CONFIG.defaultExpiryHours } = req.body;
+        const { hours = VERIFICATION_CONFIG.defaultExpiryHours, sessionExpiryDays } = req.body;
         
         // 记录验证码生成尝试
         log(LOG_LEVELS.SECURITY, '验证码生成尝试', {
-            clientIp
+            clientIp,
+            siteName: req.body.siteName,
+            sessionExpiryDays: req.body.sessionExpiryDays
         });
         
         // 检查IP是否被锁定（即使是管理员也适用速率限制）
@@ -1104,13 +1334,20 @@ app.post('/generate-code', sessionAuthMiddleware, async (req, res) => {
         // 确保正确处理小数值的小时，使用毫秒计算更精确
         expiryDate.setTime(expiryDate.getTime() + expiryTime * 60 * 60 * 1000);
         
+        // 验证现场名称不能为空
+        if (!req.body.siteName || req.body.siteName.trim() === '') {
+            return res.status(400).json({ error: '现场名称不能为空' });
+        }
+        
         // 存储验证码信息
         verificationCodes.add(code, {
             expiry: expiryDate,
             attempts: 0,
             used: false,
             generatedByIp: clientIp,
-            expiryHours: expiryTime
+            expiryHours: expiryTime,
+            siteName: req.body.siteName.trim(),
+            sessionExpiryDays: sessionExpiryDays // 保存会话过期天数，null表示永久
         });
         
         // 记录成功生成
@@ -1289,24 +1526,39 @@ app.post('/verify-code', async (req, res) => {
         
         // 验证成功，创建会话
         const sessionId = createSessionId();
-        const ONE_WEEK_MS = 24 * 7 * 60 * 60 * 1000; // 7天的毫秒数
-        const sessionExpiry = Date.now() + ONE_WEEK_MS;
+        let sessionExpiry;
+        let maxAge;
         
-        // 存储会话信息
+        // 根据验证码中的sessionExpiryDays设置会话过期时间
+        if (codeInfo.sessionExpiryDays === null || codeInfo.sessionExpiryDays === undefined) {
+            // 永久有效（设置为100年）
+            sessionExpiry = Date.now() + 100 * 365 * 24 * 60 * 60 * 1000;
+            maxAge = 100 * 365 * 24 * 60 * 60 * 1000;
+        } else {
+            // 根据天数计算过期时间
+            const sessionExpiryDays = parseInt(codeInfo.sessionExpiryDays) || 7;
+            sessionExpiry = Date.now() + sessionExpiryDays * 24 * 60 * 60 * 1000;
+            maxAge = sessionExpiryDays * 24 * 60 * 60 * 1000;
+        }
+        
+        // 存储会话信息，包含用户独立的条码配置和现场名称
         sessions.add(sessionId, {
             verificationCode: code,
             expiryTime: sessionExpiry,
             clientIp: clientIp,
-            verifiedAt: Date.now()
+            verifiedAt: Date.now(),
+            siteName: codeInfo.siteName,
+            barcodeConfig: { ...DEFAULT_BARCODE_CONFIG } // 初始化用户独立的条码配置
         });
 
         // 适应代理环境的Cookie设置
         res.cookie('sessionId', sessionId, {
-            maxAge: ONE_WEEK_MS,
+            maxAge: maxAge,
             httpOnly: true,
-            secure: false, // 代理环境下设为false
-            sameSite: 'lax',
-            path: '/'
+            secure: NODE_ENV === 'production', // 根据环境设置secure属性
+            sameSite: NODE_ENV === 'production' ? 'strict' : 'lax', // 根据环境设置sameSite属性
+            path: '/', // 确保cookie在所有路径下都能访问
+            domain: undefined // 不设置domain，自动使用当前域名
         });
 
 
@@ -1411,12 +1663,13 @@ app.post('/admin-login', async (req, res) => {
         const ONE_WEEK_MS = 24 * 7 * 60 * 60 * 1000; // 7天的毫秒数
         const sessionExpiry = Date.now() + ONE_WEEK_MS;
         
-        // 存储会话信息
+        // 存储会话信息，包含用户独立的条码配置
         sessions.add(sessionId, {
             expiryTime: sessionExpiry,
             isAdmin: true,
             loggedInAt: Date.now(),
-            clientIp: clientIp
+            clientIp: clientIp,
+            barcodeConfig: { ...DEFAULT_BARCODE_CONFIG } // 初始化用户独立的条码配置
         });
         
         // 设置会话cookie
@@ -1424,7 +1677,9 @@ app.post('/admin-login', async (req, res) => {
             maxAge: ONE_WEEK_MS,
             httpOnly: true,           // 防止XSS攻击
             secure: NODE_ENV === 'production',  // 生产环境使用HTTPS
-            sameSite: NODE_ENV === 'production' ? 'strict' : 'lax' // 生产环境使用strict
+            sameSite: NODE_ENV === 'production' ? 'strict' : 'lax', // 生产环境使用strict
+            path: '/', // 确保cookie在所有路径下都能访问
+            domain: undefined // 不设置domain，自动使用当前域名
         });
         
         // 记录成功登录
@@ -1565,6 +1820,113 @@ app.get('/admin-status', (req, res) => {
             ip: req.ip
         });
         res.json({ isAdmin: false });
+    }
+});
+
+/**
+ * 获取所有用户会话API端点
+ * 仅管理员可访问，用于查看所有当前活跃的用户会话
+ * 
+ * @name /admin/get-all-sessions
+ * @route {GET} /admin/get-all-sessions
+ * @returns {Object} 包含所有会话信息的对象
+ */
+app.get('/admin/get-all-sessions', sessionAuthMiddleware, async (req, res) => {
+    try {
+        // 检查是否为管理员
+        const sessionId = req.cookies?.sessionId;
+        const sessionData = sessions.get(sessionId);
+        if (!sessionData || !sessionData.isAdmin) {
+            return res.status(403).json({ error: '权限不足' });
+        }
+        
+        // 获取所有会话
+        const allSessions = sessions.getAll();
+        
+        // 格式化会话数据，便于前端展示
+        const formattedSessions = Object.entries(allSessions).map(([sessionId, session]) => ({
+            sessionId,
+            siteName: session.siteName || '默认现场',
+            verificationCode: session.verificationCode,
+            expiryTime: session.expiryTime,
+            verifiedAt: session.verifiedAt,
+            clientIp: session.clientIp,
+            isExpired: Date.now() > session.expiryTime,
+            metadata: session.metadata
+        }));
+        
+        // 记录管理员操作
+        log(LOG_LEVELS.INFO, '管理员获取所有会话', {
+            ip: req.ip,
+            sessionCount: formattedSessions.length
+        });
+        
+        res.status(200).json({
+            success: true,
+            sessions: formattedSessions
+        });
+    } catch (error) {
+        log(LOG_LEVELS.ERROR, '获取所有会话错误', {
+            error: error.message,
+            stack: error.stack,
+            ip: req.ip
+        });
+        res.status(500).json({ error: '服务器错误' });
+    }
+});
+
+/**
+ * 停用用户会话API端点
+ * 仅管理员可访问，用于停用特定用户会话
+ * 
+ * @name /admin/deactivate-session
+ * @route {POST} /admin/deactivate-session
+ * @param {Object} req.body - 请求参数
+ * @param {string} req.body.sessionId - 要停用的会话ID
+ * @returns {Object} 包含操作结果的对象
+ */
+app.post('/admin/deactivate-session', sessionAuthMiddleware, async (req, res) => {
+    try {
+        // 检查是否为管理员
+        const sessionId = req.cookies?.sessionId;
+        const sessionData = sessions.get(sessionId);
+        if (!sessionData || !sessionData.isAdmin) {
+            return res.status(403).json({ error: '权限不足' });
+        }
+        
+        const { sessionId: targetSessionId } = req.body;
+        if (!targetSessionId) {
+            return res.status(400).json({ error: '缺少会话ID' });
+        }
+        
+        // 检查目标会话是否存在
+        const targetSession = sessions.get(targetSessionId);
+        if (!targetSession) {
+            return res.status(404).json({ error: '会话不存在' });
+        }
+        
+        // 删除目标会话
+        sessions.delete(targetSessionId);
+        
+        // 记录管理员操作
+        log(LOG_LEVELS.INFO, '管理员停用用户会话', {
+            ip: req.ip,
+            targetSessionId: targetSessionId.substring(0, 8) + '...',
+            siteName: targetSession.siteName
+        });
+        
+        res.status(200).json({
+            success: true,
+            message: '会话已成功停用',
+            sessionId: targetSessionId
+        });
+    } catch (error) {
+        log(LOG_LEVELS.ERROR, '停用会话错误', {
+            error: error.message,
+            stack: error.stack,
+            ip: req.ip
+        });
+        res.status(500).json({ error: '服务器错误' });
     }
 });
 

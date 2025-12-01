@@ -209,6 +209,16 @@
             </div>
             
             <div class="form-group">
+                <label for="site-name">现场名称 <span style="color: red;">*</span></label>
+                <input 
+                    type="text" 
+                    id="site-name" 
+                    placeholder="请输入项目现场名称" 
+                    required
+                >
+            </div>
+            
+            <div class="form-group">
                 <label for="expiry-time">验证码有效期</label>
                 <select id="expiry-time" class="form-control">
                     <option value="0.0833">5分钟</option>
@@ -222,6 +232,18 @@
                 </select>
             </div>
             
+            <div class="form-group">
+                <label for="session-expiry-days">登录保持时间</label>
+                <select id="session-expiry-days" class="form-control">
+                    <option value="null" selected>永久</option>
+                    <option value="1">1天</option>
+                    <option value="3">3天</option>
+                    <option value="7">7天</option>
+                    <option value="15">15天</option>
+                    <option value="30">30天</option>
+                </select>
+            </div>
+            
             <button type="button" id="generate-btn" class="btn">生成新验证码</button>
             
             <div id="code-display" class="code-display" style="display: none;">
@@ -231,6 +253,32 @@
             
             <div class="action-buttons">
                 <button type="button" id="generate-another-btn" class="btn btn-secondary">生成另一个</button>
+            </div>
+        </div>
+        
+        <!-- 用户会话管理 -->
+        <div id="session-management" class="session-management" style="display: none; margin-top: 40px;">
+            <h3>用户会话管理</h3>
+            
+            <div style="margin-bottom: 20px;">
+                <button type="button" id="refresh-sessions-btn" class="btn btn-secondary">刷新会话列表</button>
+            </div>
+            
+            <div id="sessions-table-container" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">现场名称</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">验证时间</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">过期时间</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">状态</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-table-body">
+                        <!-- 会话列表将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
             </div>
         </div>
         
@@ -329,7 +377,9 @@
                 loginForm.style.display = 'none';
                 codeGenerator.style.display = 'flex';
                 statusBar.style.display = 'flex';
+                document.getElementById('session-management').style.display = 'block';
                 updateStats();
+                loadSessions();
                 // 每30秒更新一次统计信息
                 setInterval(updateStats, 30000);
             }
@@ -391,6 +441,14 @@
             // 生成验证码
             generateBtn.addEventListener('click', function() {
                 const hours = expiryTime.value;
+                const siteName = document.getElementById('site-name').value;
+                const sessionExpiryDays = document.getElementById('session-expiry-days').value;
+                
+                // 验证现场名称不能为空
+                if (!siteName || siteName.trim() === '') {
+                    showMessage('请填写现场名称', 'error');
+                    return;
+                }
                 
                 generateBtn.disabled = true;
                 generateBtn.textContent = '生成中...';
@@ -401,7 +459,11 @@
                         'Content-Type': 'application/json'
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ hours: parseFloat(hours) })
+                    body: JSON.stringify({ 
+                        hours: parseFloat(hours),
+                        siteName: siteName.trim(),
+                        sessionExpiryDays: sessionExpiryDays === 'null' ? null : parseInt(sessionExpiryDays)
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -436,6 +498,101 @@
             generateAnotherBtn.addEventListener('click', function() {
                 codeDisplay.style.display = 'none';
                 generateBtn.click();
+            });
+            
+            // 加载所有会话列表
+            function loadSessions() {
+                fetch('/admin/get-all-sessions', {
+                    method: 'GET',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.sessions) {
+                        displaySessions(data.sessions);
+                    } else {
+                        showMessage(data.error || '获取会话列表失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取会话列表错误:', error);
+                    showMessage('获取会话列表错误，请稍后重试', 'error');
+                });
+            }
+            
+            // 显示会话列表
+            function displaySessions(sessions) {
+                const tbody = document.getElementById('sessions-table-body');
+                tbody.innerHTML = '';
+                
+                if (sessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">暂无会话</td></tr>';
+                    return;
+                }
+                
+                sessions.forEach(session => {
+                    const row = document.createElement('tr');
+                    
+                    // 格式化日期
+                    const verifiedAt = new Date(session.verifiedAt).toLocaleString('zh-CN');
+                    const expiryTime = new Date(session.expiryTime).toLocaleString('zh-CN');
+                    
+                    // 状态显示
+                    const status = session.isExpired ? 
+                        '<span style="color: #dc3545; font-weight: bold;">已过期</span>' : 
+                        '<span style="color: #28a745; font-weight: bold;">活跃</span>';
+                    
+                    // 会话ID显示（只显示前8位）
+                    const sessionIdDisplay = session.sessionId.substring(0, 8) + '...';
+                    
+                    row.innerHTML = `
+                        <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${session.siteName}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${verifiedAt}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${expiryTime}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">${status}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 14px;" 
+                                    onclick="deactivateSession('${session.sessionId}')">
+                                停用
+                            </button>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+            }
+            
+            // 停用会话
+            window.deactivateSession = function(sessionId) {
+                if (confirm('确定要停用这个会话吗？')) {
+                    fetch('/admin/deactivate-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({ sessionId: sessionId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showMessage('会话已成功停用', 'success');
+                            loadSessions(); // 刷新会话列表
+                            updateStats(); // 更新统计信息
+                        } else {
+                            showMessage(data.error || '停用会话失败', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('停用会话错误:', error);
+                        showMessage('停用会话错误，请稍后重试', 'error');
+                    });
+                }
+            }
+            
+            // 刷新会话列表
+            document.getElementById('refresh-sessions-btn').addEventListener('click', function() {
+                loadSessions();
             });
             
             // 按Enter键登录
