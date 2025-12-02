@@ -1,0 +1,359 @@
+{
+  "session_1764555688203_lzp30tqdeg": {
+    "expiryTime": 1765160488203,
+    "isAdmin": true,
+    "loggedInAt": 1764555688203,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764555688203,
+      "lastAccessed": 1764555688251,
+      "accessCount": 6
+    },
+    "lastActivity": 1764555688249
+  },
+  "session_1764555700113_q3yfjiwfjhm": {
+    "expiryTime": 1765160500113,
+    "isAdmin": true,
+    "loggedInAt": 1764555700113,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764555700113,
+      "lastAccessed": 1764555928278,
+      "accessCount": 26
+    },
+    "lastActivity": 1764555910154
+  },
+  "session_1764555934658_lm87g42uevf": {
+    "expiryTime": 1765160734658,
+    "isAdmin": true,
+    "loggedInAt": 1764555934658,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764555934658,
+      "lastAccessed": 1764556679645,
+      "accessCount": 56
+    },
+    "lastActivity": 1764556654707
+  },
+  "session_1764556689143_v9ktejbdxi": {
+    "expiryTime": 1765161489143,
+    "isAdmin": true,
+    "loggedInAt": 1764556689143,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764556689143,
+      "lastAccessed": 1764556689194,
+      "accessCount": 6
+    },
+    "lastActivity": 1764556689193
+  },
+  "session_1764556698651_1meqcvbz63k": {
+    "expiryTime": 1765161498651,
+    "isAdmin": true,
+    "loggedInAt": 1764556698651,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764556698651,
+      "lastAccessed": 1764558738937,
+      "accessCount": 95
+    },
+    "lastActivity": 1764558733602
+  },
+  "session_1764558744804_us8f7v9sqr": {
+    "expiryTime": 1765163544804,
+    "isAdmin": true,
+    "loggedInAt": 1764558744804,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764558744804,
+      "lastAccessed": 1764558804855,
+      "accessCount": 10
+    },
+    "lastActivity": 1764558804855
+  },
+  "session_1764558842188_u9wofdzmpt": {
+    "expiryTime": 1765163944020,
+    "isAdmin": true,
+    "loggedInAt": 1764558842188,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764558842188,
+      "lastAccessed": 1764559144020,
+      "accessCount": 45
+    },
+    "lastActivity": 1764559144020
+  },
+  "session_1764559476098_gfe122wixda": {
+    "expiryTime": 1765164306491,
+    "isAdmin": true,
+    "loggedInAt": 1764559476098,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764559476099,
+      "lastAccessed": 1764559506496,
+      "accessCount": 11
+    },
+    "lastActivity": 1764559506496
+  },
+  "session_1764559522025_y9r4hcuu23": {
+    "expiryTime": 1765164322059,
+    "isAdmin": true,
+    "loggedInAt": 1764559522025,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764559522025,
+      "lastAccessed": 1764559856385,
+      "accessCount": 11
+    },
+    "lastActivity": 1764559522059
+  },
+  "session_1764559863221_vqlb9pp1m6a": {
+    "expiryTime": 1765164663221,
+    "isAdmin": true,
+    "loggedInAt": 1764559863221,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764559863222,
+      "lastAccessed": 1764560823295,
+      "accessCount": 78
+    },
+    "lastActivity": 1764560823279
+  },
+  "session_1764560859341_z3wvdcp7qbg": {
+    "expiryTime": 1765165659341,
+    "isAdmin": true,
+    "loggedInAt": 1764560859341,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764560859341,
+      "lastAccessed": 1764560859394,
+      "accessCount": 6
+    },
+    "lastActivity": 1764560859386
+  },
+  "session_1764560869941_6dt5ezqmbwq": {
+    "expiryTime": 1765165669942,
+    "isAdmin": true,
+    "loggedInAt": 1764560869942,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764560869942,
+      "lastAccessed": 1764567170007,
+      "accessCount": 76
+    },
+    "lastActivity": 1764567169992
+  },
+  "session_1764567184614_wkvx419c3k": {
+    "expiryTime": 1765171984614,
+    "isAdmin": true,
+    "loggedInAt": 1764567184614,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764567184614,
+      "lastAccessed": 1764567184682,
+      "accessCount": 6
+    },
+    "lastActivity": 1764567184682
+  },
+  "session_1764567203024_ns6i9bkve5": {
+    "expiryTime": 1765172003025,
+    "isAdmin": true,
+    "loggedInAt": 1764567203025,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764567203025,
+      "lastAccessed": 1764567353100,
+      "accessCount": 16
+    },
+    "lastActivity": 1764567353084
+  },
+  "session_1764571363109_wby4vtrqyh": {
+    "expiryTime": 1765176163109,
+    "isAdmin": true,
+    "loggedInAt": 1764571363109,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764571363109,
+      "lastAccessed": 1764571395605,
+      "accessCount": 19
+    },
+    "lastActivity": 1764571395583
+  },
+  "session_1764571423906_pia6djx3wo": {
+    "expiryTime": 1765176223906,
+    "isAdmin": true,
+    "loggedInAt": 1764571423906,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764571423906,
+      "lastAccessed": 1764572068384,
+      "accessCount": 37
+    },
+    "lastActivity": 1764572068366
+  },
+  "session_1764572074267_k52zske5c7k": {
+    "expiryTime": 1765176874267,
+    "isAdmin": true,
+    "loggedInAt": 1764572074267,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764572074267,
+      "lastAccessed": 1764572074313,
+      "accessCount": 6
+    },
+    "lastActivity": 1764572074313
+  },
+  "session_1764572082025_lrh3m7xde2f": {
+    "expiryTime": 1765176882025,
+    "isAdmin": true,
+    "loggedInAt": 1764572082025,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764572082025,
+      "lastAccessed": 1764573196500,
+      "accessCount": 91
+    },
+    "lastActivity": 1764573196499
+  },
+  "session_1764573204179_a26q8yk4wsn": {
+    "expiryTime": 1765178004179,
+    "isAdmin": true,
+    "loggedInAt": 1764573204179,
+    "clientIp": "::ffff:127.0.0.1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764573204179,
+      "lastAccessed": 1764634471581,
+      "accessCount": 122
+    },
+    "lastActivity": 1764634471581
+  },
+  "session_1764635196802_pgczbuejeq": {
+    "expiryTime": 1765239996802,
+    "isAdmin": true,
+    "loggedInAt": 1764635196802,
+    "clientIp": "::1",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764635196802,
+      "lastAccessed": 1764635729935,
+      "accessCount": 135
+    },
+    "lastActivity": 1764635729935
+  },
+  "session_1764635368881_tm3dqwls65n": {
+    "verificationCode": "1594",
+    "expiryTime": 4918235368881,
+    "clientIp": "::1",
+    "verifiedAt": 1764635368881,
+    "siteName": "生活区",
+    "barcodeConfig": {
+      "singleBarcodeWidthMm": 50,
+      "spacingMm": 7.5,
+      "sideMarginMm": 8
+    },
+    "metadata": {
+      "createdTimestamp": 1764635368881,
+      "lastAccessed": 1764635759158,
+      "accessCount": 12
+    }
+  }
+}

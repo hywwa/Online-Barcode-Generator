@@ -1,0 +1,44 @@
+{
+  "1594": {
+    "expiry": "2025-12-02T00:59:23.942Z",
+    "attempts": 1,
+    "used": false,
+    "generatedByIp": "::1",
+    "expiryHours": 0.5,
+    "siteName": "生活区",
+    "sessionExpiryDays": null,
+    "metadata": {
+      "createdTimestamp": 1764635363942,
+      "lastAccessed": 1764635368880,
+      "accessCount": 1
+    }
+  },
+  "4498": {
+    "expiry": "2025-12-02T00:44:16.156Z",
+    "attempts": 1,
+    "used": false,
+    "generatedByIp": "::1",
+    "expiryHours": 0.5,
+    "siteName": "生活区",
+    "sessionExpiryDays": null,
+    "metadata": {
+      "createdTimestamp": 1764634456156,
+      "lastAccessed": 1764634486603,
+      "accessCount": 1
+    }
+  },
+  "7426": {
+    "expiry": "2025-12-01T07:13:15.550Z",
+    "attempts": 1,
+    "used": false,
+    "generatedByIp": "::1",
+    "expiryHours": 0.5,
+    "siteName": "科达大楼",
+    "sessionExpiryDays": null,
+    "metadata": {
+      "createdTimestamp": 1764571395550,
+      "lastAccessed": 1764571409983,
+      "accessCount": 1
+    }
+  }
+}
