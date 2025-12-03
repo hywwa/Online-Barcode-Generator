@@ -334,26 +334,9 @@
     },
     "metadata": {
       "createdTimestamp": 1764635196802,
-      "lastAccessed": 1764635729935,
-      "accessCount": 135
+      "lastAccessed": 1764731390143,
+      "accessCount": 209
     },
-    "lastActivity": 1764635729935
-  },
-  "session_1764635368881_tm3dqwls65n": {
-    "verificationCode": "1594",
-    "expiryTime": 4918235368881,
-    "clientIp": "::1",
-    "verifiedAt": 1764635368881,
-    "siteName": "生活区",
-    "barcodeConfig": {
-      "singleBarcodeWidthMm": 50,
-      "spacingMm": 7.5,
-      "sideMarginMm": 8
-    },
-    "metadata": {
-      "createdTimestamp": 1764635368881,
-      "lastAccessed": 1764635759158,
-      "accessCount": 12
-    }
+    "lastActivity": 1764731390143
   }
 }

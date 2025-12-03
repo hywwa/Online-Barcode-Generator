@@ -102,7 +102,7 @@ const VERIFICATION_CONFIG = {
     DEFAULT_EXPIRY_HOURS: 24,        // 默认有效期（小时）
     MAX_EXPIRY_HOURS: 168,           // 最大有效期（7天）
     RATE_LIMIT_WINDOW_MS: 5 * 60 * 1000,   // 速率限制窗口（5分钟）
-    MAX_REQUESTS_PER_WINDOW: 10,     // 每个窗口最大请求数
+    MAX_REQUESTS_PER_WINDOW: 5,      // 每个窗口最大请求数
     LOCKOUT_MINUTES: 15,             // 多次失败后的锁定时间
     CLEANUP_INTERVAL_MS: 15 * 60 * 1000 // 清理间隔（15分钟）
 };
@@ -1301,37 +1301,37 @@ function sessionAuthMiddleware(req, res, next) {
 app.post('/generate-code', sessionAuthMiddleware, async (req, res) => {
     try {
         const clientIp = req.ip || req.connection.remoteAddress;
-        const { hours = VERIFICATION_CONFIG.defaultExpiryHours, sessionExpiryDays } = req.body;
+        const { hours = VERIFICATION_CONFIG.DEFAULT_EXPIRY_HOURS, sessionExpiryDays } = req.body;
         
         // 记录验证码生成尝试
-        log(LOG_LEVELS.SECURITY, '验证码生成尝试', {
+    log(LOG_LEVELS.SECURITY, '验证码生成尝试', {
+        clientIp,
+        siteName: req.body.siteName,
+        sessionExpiryDays: req.body.sessionExpiryDays
+    });
+    
+    // 检查IP是否被锁定（即使是管理员也适用速率限制）
+    if (isIpLocked(clientIp)) {
+        const remainingTime = Math.ceil((lockedIps[clientIp].unlockTime - Date.now()) / 60000);
+        
+        log(LOG_LEVELS.SECURITY, '验证码生成失败 - IP已锁定', {
             clientIp,
-            siteName: req.body.siteName,
-            sessionExpiryDays: req.body.sessionExpiryDays
+            remainingMinutes: remainingTime
         });
         
-        // 检查IP是否被锁定（即使是管理员也适用速率限制）
-        if (isIpLocked(clientIp)) {
-            const remainingTime = Math.ceil((lockedIps[clientIp].unlockTime - Date.now()) / 60000);
-            
-            log(LOG_LEVELS.SECURITY, '验证码生成失败 - IP已锁定', {
-                clientIp,
-                remainingMinutes: remainingTime
-            });
-            
-            return res.status(429).json({ error: `请求过于频繁，请${remainingTime}分钟后再试` });
-        }
+        return res.status(429).json({ error: `请求过于频繁，请${remainingTime}分钟后再试` });
+    }
+    
+    // 验证过期时间参数
+    const expiryTime = parseFloat(hours);
+    if (isNaN(expiryTime) || expiryTime <= 0 || expiryTime > VERIFICATION_CONFIG.MAX_EXPIRY_HOURS) {
+        log(LOG_LEVELS.WARNING, '验证码生成失败 - 无效的过期时间', {
+            clientIp,
+            requestedHours: hours
+        });
         
-        // 验证过期时间参数
-        const expiryTime = parseFloat(hours);
-        if (isNaN(expiryTime) || expiryTime <= 0 || expiryTime > 168) { // 最大7天
-            log(LOG_LEVELS.WARNING, '验证码生成失败 - 无效的过期时间', {
-                clientIp,
-                requestedHours: hours
-            });
-            
-            return res.status(400).json({ error: '请提供有效的过期时间（大于0小时，最多168小时）' });
-        }
+        return res.status(400).json({ error: `请提供有效的过期时间（大于0小时，最多${VERIFICATION_CONFIG.MAX_EXPIRY_HOURS}小时）` });
+    }
         
         // 生成验证码
         const code = generateVerificationCode();
@@ -1408,25 +1408,25 @@ function checkRateLimit(ip) {
     
     // 清理过期的访问记录
     ipAccessRecords[ip] = ipAccessRecords[ip].filter(timestamp => 
-        now - timestamp < VERIFICATION_CONFIG.rateLimitWindowMs
+        now - timestamp < VERIFICATION_CONFIG.RATE_LIMIT_WINDOW_MS
     );
     
     const currentRequests = ipAccessRecords[ip].length;
     
     // 检查是否超出请求限制
-    if (currentRequests >= VERIFICATION_CONFIG.maxRequestsPerWindow) {
+    if (currentRequests >= VERIFICATION_CONFIG.MAX_REQUESTS_PER_WINDOW) {
         // 锁定IP
         lockedIps[ip] = {
             lockTime: now,
-            unlockTime: now + VERIFICATION_CONFIG.lockoutMinutes * 60 * 1000
+            unlockTime: now + VERIFICATION_CONFIG.LOCKOUT_MINUTES * 60 * 1000
         };
         
         log(LOG_LEVELS.SECURITY, '速率限制被触发，IP已锁定', {
             ip,
             currentRequests,
-            maxRequests: VERIFICATION_CONFIG.maxRequestsPerWindow,
-            windowMs: VERIFICATION_CONFIG.rateLimitWindowMs,
-            lockoutMinutes: VERIFICATION_CONFIG.lockoutMinutes,
+            maxRequests: VERIFICATION_CONFIG.MAX_REQUESTS_PER_WINDOW,
+            windowMs: VERIFICATION_CONFIG.RATE_LIMIT_WINDOW_MS,
+            lockoutMinutes: VERIFICATION_CONFIG.LOCKOUT_MINUTES,
             unlockTime: new Date(lockedIps[ip].unlockTime).toISOString()
         });
         
@@ -1437,12 +1437,12 @@ function checkRateLimit(ip) {
     ipAccessRecords[ip].push(now);
     
     // 记录接近限制的请求（超过75%）
-    if (currentRequests >= VERIFICATION_CONFIG.maxRequestsPerWindow * 0.75) {
+    if (currentRequests >= VERIFICATION_CONFIG.MAX_REQUESTS_PER_WINDOW * 0.75) {
         log(LOG_LEVELS.WARN, '请求频率接近限制', {
             ip,
             currentRequests,
-            maxRequests: VERIFICATION_CONFIG.maxRequestsPerWindow,
-            remainingRequests: VERIFICATION_CONFIG.maxRequestsPerWindow - currentRequests
+            maxRequests: VERIFICATION_CONFIG.MAX_REQUESTS_PER_WINDOW,
+            remainingRequests: VERIFICATION_CONFIG.MAX_REQUESTS_PER_WINDOW - currentRequests
         });
     }
     
